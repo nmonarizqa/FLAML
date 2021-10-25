@@ -99,7 +99,7 @@
     <span class="n">N_SPLITS</span><span class="p">,</span>
     <span class="n">SAMPLE_MULTIPLY_FACTOR</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="kn">from</span> <span class="nn">.data</span> <span class="kn">import</span> <span class="n">concat</span>
+<span class="kn">from</span> <span class="nn">.data</span> <span class="kn">import</span> <span class="n">concat</span><span class="p">,</span> <span class="n">CLASSIFICATION</span>
 <span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">tune</span>
 <span class="kn">from</span> <span class="nn">.training_log</span> <span class="kn">import</span> <span class="n">training_log_reader</span><span class="p">,</span> <span class="n">training_log_writer</span>
 
@@ -152,6 +152,7 @@
                 <span class="ow">and</span> <span class="n">starting_point</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
             <span class="p">):</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">init_config</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">starting_point</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">starting_point</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">init_config</span> <span class="o">=</span> <span class="n">starting_point</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_hp_names</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_search_space_domain</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
@@ -181,16 +182,11 @@
             <span class="n">trained_estimator</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;trained_estimator&quot;</span><span class="p">]</span>
             <span class="k">del</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;trained_estimator&quot;</span><span class="p">]</span>  <span class="c1"># free up RAM</span>
             <span class="n">n_iter</span> <span class="o">=</span> <span class="n">trained_estimator</span> <span class="ow">and</span> <span class="n">trained_estimator</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;n_estimators&quot;</span><span class="p">)</span>
-            <span class="k">if</span> <span class="p">(</span>
-                <span class="n">n_iter</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-                <span class="ow">and</span> <span class="s2">&quot;n_estimators&quot;</span> <span class="ow">in</span> <span class="n">config</span>
-                <span class="ow">and</span> <span class="n">n_iter</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_search_space_domain</span><span class="p">[</span><span class="s2">&quot;n_estimators&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span>
-            <span class="p">):</span>
+            <span class="k">if</span> <span class="n">n_iter</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="s2">&quot;n_estimators&quot;</span> <span class="ow">in</span> <span class="n">config</span><span class="p">:</span>
                 <span class="n">config</span><span class="p">[</span><span class="s2">&quot;n_estimators&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">n_iter</span>
-                <span class="n">n_iter</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">obj</span><span class="p">,</span> <span class="n">time2eval</span><span class="p">,</span> <span class="n">trained_estimator</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="kc">None</span>
-            <span class="n">metric_for_logging</span> <span class="o">=</span> <span class="n">config</span> <span class="o">=</span> <span class="n">n_iter</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">metric_for_logging</span> <span class="o">=</span> <span class="n">config</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">trial_time</span> <span class="o">=</span> <span class="n">time2eval</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">total_time_used</span> <span class="o">+=</span> <span class="n">time_used</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">total_iter</span> <span class="o">+=</span> <span class="mi">1</span>
@@ -218,10 +214,8 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">trained_estimator</span><span class="o">.</span><span class="n">cleanup</span><span class="p">()</span>
             <span class="k">if</span> <span class="n">trained_estimator</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">trained_estimator</span> <span class="o">=</span> <span class="n">trained_estimator</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">best_n_iter</span> <span class="o">=</span> <span class="n">n_iter</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">metric_for_logging</span> <span class="o">=</span> <span class="n">metric_for_logging</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">val_loss</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">obj</span><span class="p">,</span> <span class="n">config</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">n_iter</span> <span class="o">=</span> <span class="n">n_iter</span>
 
     <span class="k">def</span> <span class="nf">get_hist_config_sig</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sample_size</span><span class="p">,</span> <span class="n">config</span><span class="p">):</span>
         <span class="n">config_values</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">([</span><span class="n">config</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_hp_names</span><span class="p">])</span>
@@ -321,12 +315,9 @@
         <span class="p">}</span>
         <span class="k">if</span> <span class="n">sampled_weight</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">fit_kwargs</span><span class="p">[</span><span class="s2">&quot;sample_weight&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">weight</span>
-        <span class="c1">#     tune.report(**result)</span>
         <span class="k">return</span> <span class="n">result</span>
 
-    <span class="k">def</span> <span class="nf">_train_with_config</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">estimator</span><span class="p">,</span> <span class="n">config_w_resource</span><span class="p">,</span> <span class="n">sample_size</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">n_iter</span><span class="o">=</span><span class="kc">None</span>
-    <span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_train_with_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">estimator</span><span class="p">,</span> <span class="n">config_w_resource</span><span class="p">,</span> <span class="n">sample_size</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">sample_size</span><span class="p">:</span>
             <span class="n">sample_size</span> <span class="o">=</span> <span class="n">config_w_resource</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
                 <span class="s2">&quot;FLAML_sample_size&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">y_train_all</span><span class="p">)</span>
@@ -363,7 +354,6 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">n_jobs</span><span class="p">,</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">learner_classes</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">estimator</span><span class="p">),</span>
             <span class="n">budget</span><span class="p">,</span>
-            <span class="n">n_iter</span><span class="p">,</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">fit_kwargs</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="k">if</span> <span class="n">sampled_weight</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -458,7 +448,8 @@
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">best_config</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;A dictionary of the best configuration.&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_search_states</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_best_estimator</span><span class="p">]</span><span class="o">.</span><span class="n">best_config</span>
+        <span class="n">state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_search_states</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_best_estimator</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">state</span> <span class="ow">and</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="s2">&quot;best_config&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">best_config_per_estimator</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -492,7 +483,7 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">time_to_find_best_model</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;time taken to find best model in seconds&quot;&quot;&quot;</span>
+        <span class="sd">&quot;&quot;&quot;Time taken to find best model in seconds&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;_time_taken_best_iter&quot;</span><span class="p">)</span>
 
 <div class="viewcode-block" id="AutoML.predict"><a class="viewcode-back" href="../../index.html#flaml.AutoML.predict">[docs]</a>    <span class="k">def</span> <span class="nf">predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X_test</span><span class="p">):</span>
@@ -682,7 +673,8 @@
         <span class="k">if</span> <span class="n">issparse</span><span class="p">(</span><span class="n">X_train_all</span><span class="p">):</span>
             <span class="n">X_train_all</span> <span class="o">=</span> <span class="n">X_train_all</span><span class="o">.</span><span class="n">tocsr</span><span class="p">()</span>
         <span class="k">if</span> <span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_state</span><span class="o">.</span><span class="n">task</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;binary&quot;</span><span class="p">,</span> <span class="s2">&quot;multi&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_state</span><span class="o">.</span><span class="n">task</span> <span class="ow">in</span> <span class="n">CLASSIFICATION</span>
+            <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_auto_augment</span>
             <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_state</span><span class="o">.</span><span class="n">fit_kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;sample_weight&quot;</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span>
             <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_split_type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;time&quot;</span><span class="p">,</span> <span class="s2">&quot;group&quot;</span><span class="p">]</span>
         <span class="p">):</span>
@@ -788,7 +780,7 @@
                     <span class="n">y_train</span><span class="p">,</span> <span class="n">y_val</span> <span class="o">=</span> <span class="n">y_train_all</span><span class="p">[</span><span class="n">train_idx</span><span class="p">],</span> <span class="n">y_train_all</span><span class="p">[</span><span class="n">val_idx</span><span class="p">]</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">_state</span><span class="o">.</span><span class="n">groups</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_state</span><span class="o">.</span><span class="n">groups_all</span><span class="p">[</span><span class="n">train_idx</span><span class="p">]</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">_state</span><span class="o">.</span><span class="n">groups_val</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_state</span><span class="o">.</span><span class="n">groups_all</span><span class="p">[</span><span class="n">val_idx</span><span class="p">]</span>
-            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_state</span><span class="o">.</span><span class="n">task</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;binary&quot;</span><span class="p">,</span> <span class="s2">&quot;multi&quot;</span><span class="p">):</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_state</span><span class="o">.</span><span class="n">task</span> <span class="ow">in</span> <span class="n">CLASSIFICATION</span><span class="p">:</span>
                 <span class="c1"># for classification, make sure the labels are complete in both</span>
                 <span class="c1"># training and validation data</span>
                 <span class="n">label_set</span><span class="p">,</span> <span class="n">first</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">y_train_all</span><span class="p">,</span> <span class="n">return_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
@@ -967,10 +959,11 @@
         <span class="n">n_splits</span><span class="o">=</span><span class="n">N_SPLITS</span><span class="p">,</span>
         <span class="n">split_type</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">groups</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-        <span class="n">n_jobs</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="n">n_jobs</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
         <span class="n">train_best</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="n">train_full</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="n">record_id</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
+        <span class="n">auto_augment</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="o">**</span><span class="n">fit_kwargs</span><span class="p">,</span>
     <span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Retrain from log file</span>
@@ -1006,7 +999,8 @@
 <span class="sd">            groups: None or array-like | Group labels (with matching length to</span>
 <span class="sd">                y_train) or groups counts (with sum equal to length of y_train)</span>
 <span class="sd">                for training data.</span>
-<span class="sd">            n_jobs: An integer of the number of threads for training.</span>
+<span class="sd">            n_jobs: An integer of the number of threads for training. Use all</span>
+<span class="sd">                available resources when n_jobs == -1.</span>
 <span class="sd">            train_best: A boolean of whether to train the best config in the</span>
 <span class="sd">                time budget; if false, train the last config in the budget.</span>
 <span class="sd">            train_full: A boolean of whether to train on the full data. If true,</span>
@@ -1015,6 +1009,8 @@
 <span class="sd">                be retrained. By default `record_id = -1` which means this will be</span>
 <span class="sd">                ignored. `record_id = 0` corresponds to the first trial, and</span>
 <span class="sd">                when `record_id &gt;= 0`, `time_budget` will be ignored.</span>
+<span class="sd">            auto_augment: boolean, default=True | Whether to automatically</span>
+<span class="sd">                augment rare classes.</span>
 <span class="sd">            **fit_kwargs: Other key word arguments to pass to fit() function of</span>
 <span class="sd">                the searched learners, such as sample_weight.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -1081,11 +1077,12 @@
         <span class="k">elif</span> <span class="n">eval_method</span> <span class="o">==</span> <span class="s2">&quot;auto&quot;</span><span class="p">:</span>
             <span class="n">eval_method</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_decide_eval_method</span><span class="p">(</span><span class="n">time_budget</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">modelcount</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_auto_augment</span> <span class="o">=</span> <span class="n">auto_augment</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_prepare_data</span><span class="p">(</span><span class="n">eval_method</span><span class="p">,</span> <span class="n">split_ratio</span><span class="p">,</span> <span class="n">n_splits</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_state</span><span class="o">.</span><span class="n">time_budget</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_state</span><span class="o">.</span><span class="n">n_jobs</span> <span class="o">=</span> <span class="n">n_jobs</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_trained_estimator</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_state</span><span class="o">.</span><span class="n">_train_with_config</span><span class="p">(</span>
-            <span class="n">best_estimator</span><span class="p">,</span> <span class="n">best_config</span><span class="p">,</span> <span class="n">sample_size</span><span class="p">,</span> <span class="n">best</span><span class="o">.</span><span class="n">n_iter</span>
+            <span class="n">best_estimator</span><span class="p">,</span> <span class="n">best_config</span><span class="p">,</span> <span class="n">sample_size</span>
         <span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;retrain from log succeeded&quot;</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">training_duration</span></div>
@@ -1095,7 +1092,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_state</span><span class="o">.</span><span class="n">task</span> <span class="o">=</span> <span class="n">get_classification_objective</span><span class="p">(</span>
                 <span class="nb">len</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_y_train_all</span><span class="p">))</span>
             <span class="p">)</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_state</span><span class="o">.</span><span class="n">task</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;binary&quot;</span><span class="p">,</span> <span class="s2">&quot;multi&quot;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_state</span><span class="o">.</span><span class="n">task</span> <span class="ow">in</span> <span class="n">CLASSIFICATION</span><span class="p">:</span>
             <span class="k">assert</span> <span class="n">split_type</span> <span class="ow">in</span> <span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;stratified&quot;</span><span class="p">,</span> <span class="s2">&quot;uniform&quot;</span><span class="p">,</span> <span class="s2">&quot;time&quot;</span><span class="p">,</span> <span class="s2">&quot;group&quot;</span><span class="p">]</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_split_type</span> <span class="o">=</span> <span class="p">(</span>
                 <span class="n">split_type</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_state</span><span class="o">.</span><span class="n">groups</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="s2">&quot;stratified&quot;</span> <span class="ow">or</span> <span class="s2">&quot;group&quot;</span>
@@ -1161,7 +1158,7 @@
 <span class="sd">            (b) otherwise, it is a nested dict with &#39;ml&#39; as the key, and</span>
 <span class="sd">            a list of the low_cost_partial_configs as the value, corresponding</span>
 <span class="sd">            to each learner&#39;s low_cost_partial_config; the estimator index as</span>
-<span class="sd">            an integer corresponding to the cheapest learner is appeneded to the</span>
+<span class="sd">            an integer corresponding to the cheapest learner is appended to the</span>
 <span class="sd">            list at the end.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -1254,7 +1251,7 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            A float for the minimal sample size or None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="n">MIN_SAMPLE_TRAIN</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sample</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_min_sample_size</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sample</span> <span class="k">else</span> <span class="kc">None</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">max_resource</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]:</span>
@@ -1345,7 +1342,7 @@
         <span class="n">sample_weight_val</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">groups_val</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">groups</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-        <span class="n">verbose</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="n">verbose</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
         <span class="n">retrain_full</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="n">split_type</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">learner_selector</span><span class="o">=</span><span class="s2">&quot;sample&quot;</span><span class="p">,</span>
@@ -1354,8 +1351,10 @@
         <span class="n">seed</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">n_concurrent_trials</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
         <span class="n">keep_search_state</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-        <span class="n">append_log</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="n">early_stop</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">append_log</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">auto_augment</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">min_sample_size</span><span class="o">=</span><span class="n">MIN_SAMPLE_TRAIN</span><span class="p">,</span>
         <span class="o">**</span><span class="n">fit_kwargs</span><span class="p">,</span>
     <span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Find a model for a given task</span>
@@ -1438,7 +1437,7 @@
 <span class="sd">            groups: None or array-like | Group labels (with matching length to</span>
 <span class="sd">                y_train) or groups counts (with sum equal to length of y_train)</span>
 <span class="sd">                for training data.</span>
-<span class="sd">            verbose: int, default=1 | Controls the verbosity, higher means more</span>
+<span class="sd">            verbose: int, default=3 | Controls the verbosity, higher means more</span>
 <span class="sd">                messages.</span>
 <span class="sd">            retrain_full: bool or str, default=True | whether to retrain the</span>
 <span class="sd">                selected model on the full training data when using holdout.</span>
@@ -1466,6 +1465,20 @@
 <span class="sd">                hyperparamter configurations for the corresponding estimators.</span>
 <span class="sd">                The value can be a single hyperparamter configuration dict or a list</span>
 <span class="sd">                of hyperparamter configuration dicts.</span>
+<span class="sd">                In the following code example, we get starting_points from the</span>
+<span class="sd">                automl_experiment and use them in the new_automl_experiment.</span>
+<span class="sd">                e.g.,</span>
+<span class="sd">                .. code-block:: python</span>
+<span class="sd">                    from flaml import AutoML</span>
+<span class="sd">                    automl_experiment = AutoML()</span>
+<span class="sd">                    X_train, y_train = load_iris(return_X_y=True)</span>
+<span class="sd">                    automl_experiment.fit(X_train, y_train)</span>
+<span class="sd">                    starting_points = automl_experiment.best_config_per_estimator</span>
+
+<span class="sd">                    new_automl_experiment = AutoML()</span>
+<span class="sd">                    new_automl_experiment.fit(X_train, y_train,</span>
+<span class="sd">                        starting_points=starting_points)</span>
+
 <span class="sd">            seed: int or None, default=None | The random seed for np.random.</span>
 <span class="sd">            n_concurrent_trials: [Experimental] int, default=1 | The number of</span>
 <span class="sd">                concurrent trials. For n_concurrent_trials &gt; 1, installation of</span>
@@ -1475,8 +1488,12 @@
 <span class="sd">                saving.</span>
 <span class="sd">            early_stop: boolean, default=False | Whether to stop early if the</span>
 <span class="sd">                search is considered to converge.</span>
-<span class="sd">            append_log: boolean, default=False | whetehr to directly append the log</span>
+<span class="sd">            append_log: boolean, default=False | Whetehr to directly append the log</span>
 <span class="sd">                records to the input log file if it exists.</span>
+<span class="sd">            auto_augment: boolean, default=True | Whether to automatically</span>
+<span class="sd">                augment rare classes.</span>
+<span class="sd">            min_sample_size: int, default=MIN_SAMPLE_TRAIN | the minimal sample</span>
+<span class="sd">                size when sample=True.</span>
 <span class="sd">            **fit_kwargs: Other key word arguments to pass to fit() function of</span>
 <span class="sd">                the searched learners, such as sample_weight. Include period as</span>
 <span class="sd">                a key word argument for &#39;forecast&#39; task.</span>
@@ -1498,8 +1515,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_learner_selector</span> <span class="o">=</span> <span class="n">learner_selector</span>
         <span class="n">old_level</span> <span class="o">=</span> <span class="n">logger</span><span class="o">.</span><span class="n">getEffectiveLevel</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="o">=</span> <span class="n">verbose</span>
-        <span class="k">if</span> <span class="n">verbose</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">WARNING</span><span class="p">)</span>
+        <span class="c1"># if verbose == 0:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="mi">50</span> <span class="o">-</span> <span class="n">verbose</span> <span class="o">*</span> <span class="mi">10</span><span class="p">)</span>
         <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="n">mlflow</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">mlflow</span><span class="o">.</span><span class="n">active_run</span><span class="p">())</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">logger</span><span class="o">.</span><span class="n">handlers</span><span class="p">:</span>
             <span class="c1"># Add the console handler.</span>
             <span class="n">_ch</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">StreamHandler</span><span class="p">()</span>
@@ -1520,12 +1537,14 @@
             <span class="ow">and</span> <span class="p">(</span><span class="n">eval_method</span> <span class="o">==</span> <span class="s2">&quot;holdout&quot;</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_state</span><span class="o">.</span><span class="n">X_val</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span>
             <span class="ow">or</span> <span class="p">(</span><span class="n">eval_method</span> <span class="o">==</span> <span class="s2">&quot;cv&quot;</span><span class="p">)</span>
         <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_auto_augment</span> <span class="o">=</span> <span class="n">auto_augment</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_min_sample_size</span> <span class="o">=</span> <span class="n">min_sample_size</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_prepare_data</span><span class="p">(</span><span class="n">eval_method</span><span class="p">,</span> <span class="n">split_ratio</span><span class="p">,</span> <span class="n">n_splits</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_sample</span> <span class="o">=</span> <span class="p">(</span>
             <span class="n">sample</span>
             <span class="ow">and</span> <span class="n">task</span> <span class="o">!=</span> <span class="s2">&quot;rank&quot;</span>
             <span class="ow">and</span> <span class="n">eval_method</span> <span class="o">!=</span> <span class="s2">&quot;cv&quot;</span>
-            <span class="ow">and</span> <span class="p">(</span><span class="n">MIN_SAMPLE_TRAIN</span> <span class="o">*</span> <span class="n">SAMPLE_MULTIPLY_FACTOR</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_state</span><span class="o">.</span><span class="n">data_size</span><span class="p">)</span>
+            <span class="ow">and</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_min_sample_size</span> <span class="o">*</span> <span class="n">SAMPLE_MULTIPLY_FACTOR</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_state</span><span class="o">.</span><span class="n">data_size</span><span class="p">)</span>
         <span class="p">)</span>
         <span class="k">if</span> <span class="s2">&quot;auto&quot;</span> <span class="o">==</span> <span class="n">metric</span><span class="p">:</span>
             <span class="k">if</span> <span class="s2">&quot;binary&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_state</span><span class="o">.</span><span class="n">task</span><span class="p">:</span>
@@ -1647,8 +1666,8 @@
             <span class="k">for</span> <span class="n">state</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_search_states</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
                 <span class="k">if</span> <span class="n">state</span><span class="o">.</span><span class="n">trained_estimator</span><span class="p">:</span>
                     <span class="k">del</span> <span class="n">state</span><span class="o">.</span><span class="n">trained_estimator</span>
-        <span class="k">if</span> <span class="n">verbose</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">old_level</span><span class="p">)</span></div>
+        <span class="c1"># if verbose == 0:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">old_level</span><span class="p">)</span></div>
 
     <span class="k">def</span> <span class="nf">_search_parallel</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">try</span><span class="p">:</span>
@@ -1694,6 +1713,8 @@
                 <span class="n">points_to_evaluate</span><span class="o">=</span><span class="n">points_to_evaluate</span><span class="p">,</span>
             <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_state</span><span class="o">.</span><span class="n">time_from_start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_start_time_flag</span>
+            <span class="n">time_left</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_state</span><span class="o">.</span><span class="n">time_budget</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_state</span><span class="o">.</span><span class="n">time_from_start</span>
             <span class="n">search_alg</span> <span class="o">=</span> <span class="n">SearchAlgo</span><span class="p">(</span>
                 <span class="n">metric</span><span class="o">=</span><span class="s2">&quot;val_loss&quot;</span><span class="p">,</span>
                 <span class="n">space</span><span class="o">=</span><span class="n">space</span><span class="p">,</span>
@@ -1708,13 +1729,9 @@
                 <span class="p">],</span>
                 <span class="n">metric_constraints</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">metric_constraints</span><span class="p">,</span>
                 <span class="n">seed</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_seed</span><span class="p">,</span>
+                <span class="n">time_budget_s</span><span class="o">=</span><span class="n">time_left</span><span class="p">,</span>
             <span class="p">)</span>
             <span class="n">search_alg</span> <span class="o">=</span> <span class="n">ConcurrencyLimiter</span><span class="p">(</span><span class="n">search_alg</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_n_concurrent_trials</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_state</span><span class="o">.</span><span class="n">time_from_start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_start_time_flag</span>
-        <span class="n">time_left</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_state</span><span class="o">.</span><span class="n">time_budget</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_state</span><span class="o">.</span><span class="n">time_from_start</span>
-        <span class="n">search_alg</span><span class="o">.</span><span class="n">set_search_properties</span><span class="p">(</span>
-            <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;time_budget_s&quot;</span><span class="p">:</span> <span class="n">time_left</span><span class="p">}</span>
-        <span class="p">)</span>
         <span class="n">resources_per_trial</span> <span class="o">=</span> <span class="p">(</span>
             <span class="p">{</span><span class="s2">&quot;cpu&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_state</span><span class="o">.</span><span class="n">n_jobs</span><span class="p">}</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_state</span><span class="o">.</span><span class="n">n_jobs</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">else</span> <span class="kc">None</span>
         <span class="p">)</span>
@@ -1780,7 +1797,6 @@
                         <span class="n">config</span><span class="p">,</span>
                         <span class="n">estimator</span><span class="p">,</span>
                         <span class="n">search_state</span><span class="o">.</span><span class="n">sample_size</span><span class="p">,</span>
-                        <span class="n">search_state</span><span class="o">.</span><span class="n">n_iter</span><span class="p">,</span>
                     <span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_search_sequential</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -1818,6 +1834,18 @@
         <span class="n">better</span> <span class="o">=</span> <span class="kc">True</span>  <span class="c1"># whether we find a better model in one trial</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ensemble</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">best_model</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_max_iter</span> <span class="o">&lt;</span> <span class="mi">2</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">estimator_list</span><span class="p">:</span>
+            <span class="c1"># when max_iter is 1, no need to search</span>
+            <span class="c1"># TODO: otherwise, need to make sure SearchStates.init_config is inside search space</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_max_iter</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_best_estimator</span> <span class="o">=</span> <span class="n">estimator</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">estimator_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_selected</span> <span class="o">=</span> <span class="n">state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_search_states</span><span class="p">[</span><span class="n">estimator</span><span class="p">]</span>
+            <span class="n">state</span><span class="o">.</span><span class="n">best_config_sample_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_state</span><span class="o">.</span><span class="n">data_size</span>
+            <span class="n">state</span><span class="o">.</span><span class="n">best_config</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">state</span><span class="o">.</span><span class="n">init_config</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">init_config</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span>
+                <span class="k">else</span> <span class="n">state</span><span class="o">.</span><span class="n">init_config</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="p">)</span>
         <span class="k">for</span> <span class="bp">self</span><span class="o">.</span><span class="n">_track_iter</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_max_iter</span><span class="p">):</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_estimator_index</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">estimator</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_active_estimators</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
@@ -1845,7 +1873,7 @@
                 <span class="n">search_space</span> <span class="o">=</span> <span class="n">search_state</span><span class="o">.</span><span class="n">search_space</span>
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sample</span><span class="p">:</span>
                     <span class="n">prune_attr</span> <span class="o">=</span> <span class="s2">&quot;FLAML_sample_size&quot;</span>
-                    <span class="n">min_resource</span> <span class="o">=</span> <span class="n">MIN_SAMPLE_TRAIN</span>
+                    <span class="n">min_resource</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_min_sample_size</span>
                     <span class="n">max_resource</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_state</span><span class="o">.</span><span class="n">data_size</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">prune_attr</span> <span class="o">=</span> <span class="n">min_resource</span> <span class="o">=</span> <span class="n">max_resource</span> <span class="o">=</span> <span class="kc">None</span>
@@ -1894,19 +1922,19 @@
                         <span class="n">metric</span><span class="o">=</span><span class="s2">&quot;val_loss&quot;</span><span class="p">,</span>
                         <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;min&quot;</span><span class="p">,</span>
                         <span class="n">space</span><span class="o">=</span><span class="n">search_space</span><span class="p">,</span>
-                        <span class="n">points_to_evaluate</span><span class="o">=</span><span class="n">points_to_evaluate</span>
-                        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">search_state</span><span class="o">.</span><span class="n">init_config</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">search_space</span><span class="p">)</span>
-                        <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+                        <span class="n">points_to_evaluate</span><span class="o">=</span><span class="p">[</span>
+                            <span class="n">p</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">points_to_evaluate</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">search_space</span><span class="p">)</span>
+                        <span class="p">],</span>
                     <span class="p">)</span>
                 <span class="n">search_state</span><span class="o">.</span><span class="n">search_alg</span> <span class="o">=</span> <span class="n">ConcurrencyLimiter</span><span class="p">(</span><span class="n">algo</span><span class="p">,</span> <span class="n">max_concurrent</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
                 <span class="c1"># search_state.search_alg = algo</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">search_space</span> <span class="o">=</span> <span class="kc">None</span>
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_hpo_method</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;bs&quot;</span><span class="p">,</span> <span class="s2">&quot;cfo&quot;</span><span class="p">,</span> <span class="s2">&quot;cfocat&quot;</span><span class="p">):</span>
-                    <span class="n">search_state</span><span class="o">.</span><span class="n">search_alg</span><span class="o">.</span><span class="n">set_search_properties</span><span class="p">(</span>
+                    <span class="n">search_state</span><span class="o">.</span><span class="n">search_alg</span><span class="o">.</span><span class="n">searcher</span><span class="o">.</span><span class="n">set_search_properties</span><span class="p">(</span>
                         <span class="n">metric</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                         <span class="n">mode</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                        <span class="n">config</span><span class="o">=</span><span class="p">{</span>
+                        <span class="n">setting</span><span class="o">=</span><span class="p">{</span>
                             <span class="s2">&quot;metric_target&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_state</span><span class="o">.</span><span class="n">best_loss</span><span class="p">,</span>
                         <span class="p">},</span>
                     <span class="p">)</span>
@@ -1915,7 +1943,7 @@
                 <span class="n">search_state</span><span class="o">.</span><span class="n">training_function</span><span class="p">,</span>
                 <span class="n">search_alg</span><span class="o">=</span><span class="n">search_state</span><span class="o">.</span><span class="n">search_alg</span><span class="p">,</span>
                 <span class="n">time_budget_s</span><span class="o">=</span><span class="nb">min</span><span class="p">(</span><span class="n">budget_left</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_state</span><span class="o">.</span><span class="n">train_time_limit</span><span class="p">),</span>
-                <span class="n">verbose</span><span class="o">=</span><span class="nb">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+                <span class="n">verbose</span><span class="o">=</span><span class="nb">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="o">-</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
                 <span class="n">use_ray</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
             <span class="p">)</span>
             <span class="n">time_used</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_run_time</span>
@@ -1991,7 +2019,6 @@
                             <span class="n">search_state</span><span class="o">.</span><span class="n">config</span><span class="p">,</span>
                             <span class="n">estimator</span><span class="p">,</span>
                             <span class="n">search_state</span><span class="o">.</span><span class="n">sample_size</span><span class="p">,</span>
-                            <span class="n">search_state</span><span class="o">.</span><span class="n">n_iter</span><span class="p">,</span>
                         <span class="p">)</span>
                     <span class="k">if</span> <span class="n">mlflow</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">mlflow</span><span class="o">.</span><span class="n">active_run</span><span class="p">():</span>
                         <span class="k">with</span> <span class="n">mlflow</span><span class="o">.</span><span class="n">start_run</span><span class="p">(</span><span class="n">nested</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
@@ -2069,7 +2096,6 @@
                     <span class="bp">self</span><span class="o">.</span><span class="n">_best_estimator</span><span class="p">,</span>
                     <span class="n">state</span><span class="o">.</span><span class="n">best_config</span><span class="p">,</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">data_size_full</span><span class="p">,</span>
-                    <span class="n">state</span><span class="o">.</span><span class="n">best_n_iter</span><span class="p">,</span>
                 <span class="p">)</span>
                 <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
                     <span class="s2">&quot;retrain </span><span class="si">{}</span><span class="s2"> for </span><span class="si">{:.1f}</span><span class="s2">s&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_best_estimator</span><span class="p">,</span> <span class="n">retrain_time</span><span class="p">)</span>
@@ -2140,7 +2166,7 @@
                 <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">estimators</span><span class="p">)</span>
                 <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">estimators</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">1</span><span class="p">:</span>
                     <span class="k">return</span>
-                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_state</span><span class="o">.</span><span class="n">task</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;binary&quot;</span><span class="p">,</span> <span class="s2">&quot;multi&quot;</span><span class="p">):</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_state</span><span class="o">.</span><span class="n">task</span> <span class="ow">in</span> <span class="n">CLASSIFICATION</span><span class="p">:</span>
                     <span class="kn">from</span> <span class="nn">sklearn.ensemble</span> <span class="kn">import</span> <span class="n">StackingClassifier</span> <span class="k">as</span> <span class="n">Stacker</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="kn">from</span> <span class="nn">sklearn.ensemble</span> <span class="kn">import</span> <span class="n">StackingRegressor</span> <span class="k">as</span> <span class="n">Stacker</span>
@@ -2182,7 +2208,6 @@
                         <span class="bp">self</span><span class="o">.</span><span class="n">_best_estimator</span><span class="p">,</span>
                         <span class="n">state</span><span class="o">.</span><span class="n">best_config</span><span class="p">,</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">data_size_full</span><span class="p">,</span>
-                        <span class="n">state</span><span class="o">.</span><span class="n">best_n_iter</span><span class="p">,</span>
                     <span class="p">)</span>
                     <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
                         <span class="s2">&quot;retrain </span><span class="si">{}</span><span class="s2"> for </span><span class="si">{:.1f}</span><span class="s2">s&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
@@ -2247,7 +2272,7 @@
                     <span class="n">speed</span> <span class="o">=</span> <span class="n">delta_loss</span> <span class="o">/</span> <span class="n">delta_time</span>
                     <span class="k">if</span> <span class="n">speed</span><span class="p">:</span>
                         <span class="n">estimated_cost</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">gap</span> <span class="o">/</span> <span class="n">speed</span><span class="p">,</span> <span class="n">estimated_cost</span><span class="p">)</span>
-                <span class="n">estimated_cost</span> <span class="o">==</span> <span class="n">estimated_cost</span> <span class="ow">or</span> <span class="mf">1e-10</span>
+                <span class="n">estimated_cost</span> <span class="o">==</span> <span class="n">estimated_cost</span> <span class="ow">or</span> <span class="mf">1e-9</span>
                 <span class="n">inv</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="n">estimated_cost</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">estimated_cost</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_eci</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>

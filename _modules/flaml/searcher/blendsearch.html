@@ -192,11 +192,12 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_metric</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mode</span> <span class="o">=</span> <span class="n">metric</span><span class="p">,</span> <span class="n">mode</span>
         <span class="n">init_config</span> <span class="o">=</span> <span class="n">low_cost_partial_config</span> <span class="ow">or</span> <span class="p">{}</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">init_config</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
                 <span class="s2">&quot;No low-cost partial config given to the search algorithm. &quot;</span>
                 <span class="s2">&quot;For cost-frugal search, &quot;</span>
                 <span class="s2">&quot;consider providing low-cost values for cost-related hps via &quot;</span>
-                <span class="s2">&quot;&#39;low_cost_partial_config&#39;.&quot;</span>
+                <span class="s2">&quot;&#39;low_cost_partial_config&#39;. More info can be found at &quot;</span>
+                <span class="s2">&quot;https://github.com/microsoft/FLAML/wiki/About-</span><span class="si">%60lo</span><span class="s2">w_cost_partial_config%60&quot;</span>
             <span class="p">)</span>
         <span class="k">if</span> <span class="n">evaluated_rewards</span> <span class="ow">and</span> <span class="n">mode</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_points_to_evaluate</span> <span class="o">=</span> <span class="p">[]</span>
@@ -291,6 +292,7 @@
         <span class="n">metric</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">mode</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">config</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">setting</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
         <span class="n">metric_changed</span> <span class="o">=</span> <span class="n">mode_changed</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="k">if</span> <span class="n">metric</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_metric</span> <span class="o">!=</span> <span class="n">metric</span><span class="p">:</span>
@@ -327,22 +329,22 @@
                     <span class="p">)</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">_gs</span><span class="o">.</span><span class="n">space</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ls</span><span class="o">.</span><span class="n">space</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_init_search</span><span class="p">()</span>
-            <span class="k">if</span> <span class="n">config</span><span class="p">:</span>
-                <span class="c1"># CFO doesn&#39;t need these settings</span>
-                <span class="k">if</span> <span class="s2">&quot;time_budget_s&quot;</span> <span class="ow">in</span> <span class="n">config</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">_time_budget_s</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;time_budget_s&quot;</span><span class="p">]</span>  <span class="c1"># budget from now</span>
-                    <span class="n">now</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">_time_used</span> <span class="o">+=</span> <span class="n">now</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_start_time</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">_start_time</span> <span class="o">=</span> <span class="n">now</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">_set_deadline</span><span class="p">()</span>
-                <span class="k">if</span> <span class="s2">&quot;metric_target&quot;</span> <span class="ow">in</span> <span class="n">config</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">_metric_target</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;metric_target&quot;</span><span class="p">)</span>
-                <span class="k">if</span> <span class="s2">&quot;num_samples&quot;</span> <span class="ow">in</span> <span class="n">config</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">_num_samples</span> <span class="o">=</span> <span class="p">(</span>
-                        <span class="n">config</span><span class="p">[</span><span class="s2">&quot;num_samples&quot;</span><span class="p">]</span>
-                        <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_result</span><span class="p">)</span>
-                        <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_trial_proposed_by</span><span class="p">)</span>
-                    <span class="p">)</span>
+        <span class="k">if</span> <span class="n">setting</span><span class="p">:</span>
+            <span class="c1"># CFO doesn&#39;t need these settings</span>
+            <span class="k">if</span> <span class="s2">&quot;time_budget_s&quot;</span> <span class="ow">in</span> <span class="n">setting</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_time_budget_s</span> <span class="o">=</span> <span class="n">setting</span><span class="p">[</span><span class="s2">&quot;time_budget_s&quot;</span><span class="p">]</span>  <span class="c1"># budget from now</span>
+                <span class="n">now</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_time_used</span> <span class="o">+=</span> <span class="n">now</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_start_time</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_start_time</span> <span class="o">=</span> <span class="n">now</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_set_deadline</span><span class="p">()</span>
+            <span class="k">if</span> <span class="s2">&quot;metric_target&quot;</span> <span class="ow">in</span> <span class="n">setting</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_metric_target</span> <span class="o">=</span> <span class="n">setting</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;metric_target&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="s2">&quot;num_samples&quot;</span> <span class="ow">in</span> <span class="n">setting</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_num_samples</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="n">setting</span><span class="p">[</span><span class="s2">&quot;num_samples&quot;</span><span class="p">]</span>
+                    <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_result</span><span class="p">)</span>
+                    <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_trial_proposed_by</span><span class="p">)</span>
+                <span class="p">)</span>
         <span class="k">return</span> <span class="kc">True</span></div>
 
     <span class="k">def</span> <span class="nf">_set_deadline</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -374,7 +376,13 @@
             <span class="p">{},</span>
             <span class="n">recursive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ls_bound_max</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ls_bound_min</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ls_bound_max</span> <span class="o">=</span> <span class="n">normalize</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_ls</span><span class="o">.</span><span class="n">init_config</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_ls</span><span class="o">.</span><span class="n">space</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_ls</span><span class="o">.</span><span class="n">init_config</span><span class="p">,</span>
+            <span class="p">{},</span>
+            <span class="n">recursive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_gs_admissible_min</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ls_bound_min</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_gs_admissible_max</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ls_bound_max</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_result</span> <span class="o">=</span> <span class="p">{}</span>  <span class="c1"># config_signature: tuple -&gt; result: Dict</span>
@@ -553,6 +561,11 @@
                     <span class="n">subspace</span><span class="p">[</span><span class="n">key</span><span class="p">],</span>
                     <span class="n">domain</span><span class="p">[</span><span class="n">choice</span><span class="p">],</span>
                 <span class="p">)</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">admissible_max</span><span class="p">[</span><span class="n">key</span><span class="p">])</span> <span class="o">&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">domain</span><span class="o">.</span><span class="n">categories</span><span class="p">):</span>
+                    <span class="c1"># points + index</span>
+                    <span class="n">normal</span> <span class="o">=</span> <span class="p">(</span><span class="n">choice</span> <span class="o">+</span> <span class="mf">0.5</span><span class="p">)</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">domain</span><span class="o">.</span><span class="n">categories</span><span class="p">)</span>
+                    <span class="n">admissible_max</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">normal</span><span class="p">,</span> <span class="n">admissible_max</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+                    <span class="n">admissible_min</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">normal</span><span class="p">,</span> <span class="n">admissible_min</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
             <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_update_admissible_region</span><span class="p">(</span>
                     <span class="n">value</span><span class="p">,</span>
@@ -644,6 +657,7 @@
             <span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_expand_admissible_region</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lower</span><span class="p">,</span> <span class="n">upper</span><span class="p">,</span> <span class="n">space</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;expand the admissible region for the subspace `space`&quot;&quot;&quot;</span>
         <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">upper</span><span class="p">:</span>
             <span class="n">ub</span> <span class="o">=</span> <span class="n">upper</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ub</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
